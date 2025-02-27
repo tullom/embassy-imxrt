@@ -57,6 +57,14 @@ impl From<Algorithm> for u8 {
     }
 }
 
+/// Hashcrypt Errors
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum Error {
+    /// Unsupported Configuration
+    UnsupportedConfiguration,
+}
+
 impl<'d, M: Mode> Hashcrypt<'d, M> {
     /// Instantiate new Hashcrypt peripheral
     fn new_inner(peripheral: impl Peripheral<P = HASHCRYPT> + 'd, dma_ch: Option<dma::channel::Channel<'d>>) -> Self {
@@ -87,8 +95,8 @@ impl<'d, M: Mode> Hashcrypt<'d, M> {
 
 impl<'d> Hashcrypt<'d, Blocking> {
     /// Create a new instance
-    pub fn new_blocking(peripheral: impl Peripheral<P = HASHCRYPT> + 'd) -> Self {
-        Self::new_inner(peripheral, None)
+    pub fn new_blocking(peripheral: impl Peripheral<P = HASHCRYPT> + 'd) -> Result<Self, Error> {
+        Ok(Self::new_inner(peripheral, None))
     }
 
     /// Start a new SHA256 hash
@@ -103,8 +111,13 @@ impl<'d> Hashcrypt<'d, Async> {
     pub fn new_async(
         peripheral: impl Peripheral<P = HASHCRYPT> + 'd,
         dma_ch: impl Peripheral<P = impl HashcryptDma> + 'd,
-    ) -> Self {
-        Self::new_inner(peripheral, Some(dma::Dma::reserve_channel(dma_ch)))
+    ) -> Result<Self, Error> {
+        let ch = dma::Dma::reserve_channel(dma_ch);
+        if ch.is_some() {
+            Ok(Self::new_inner(peripheral, ch))
+        } else {
+            Err(Error::UnsupportedConfiguration)
+        }
     }
 
     /// Start a new SHA256 hash

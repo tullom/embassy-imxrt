@@ -12,7 +12,7 @@ async fn main(_spawner: Spawner) {
     let mut hash = [0u8; hasher::HASH_LEN];
 
     info!("Initializing Hashcrypt");
-    let mut hashcrypt = Hashcrypt::new_blocking(p.HASHCRYPT);
+    let mut hashcrypt = Hashcrypt::new_blocking(p.HASHCRYPT).unwrap();
 
     info!("Starting hashes");
     // Data that fits into a single block

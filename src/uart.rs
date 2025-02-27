@@ -556,7 +556,11 @@ impl<'a> UartTx<'a, Async> {
 
         let tx_dma = dma::Dma::reserve_channel(tx_dma);
 
-        Ok(Self::new_inner::<T>(Some(tx_dma)))
+        if tx_dma.is_some() {
+            Ok(Self::new_inner::<T>(Some(tx_dma.unwrap())))
+        } else {
+            Err(Error::InvalidArgument)
+        }
     }
 
     /// Transmit the provided buffer asynchronously.
@@ -687,7 +691,11 @@ impl<'a> UartRx<'a, Async> {
 
         let rx_dma = dma::Dma::reserve_channel(rx_dma);
 
-        Ok(Self::new_inner::<T>(Some(rx_dma)))
+        if rx_dma.is_some() {
+            Ok(Self::new_inner::<T>(Some(rx_dma.unwrap())))
+        } else {
+            Err(Error::InvalidArgument)
+        }
     }
 
     /// Read from UART RX asynchronously.
@@ -784,12 +792,16 @@ impl<'a> Uart<'a, Async> {
         let tx_dma = dma::Dma::reserve_channel(tx_dma);
         let rx_dma = dma::Dma::reserve_channel(rx_dma);
 
+        if tx_dma.is_none() || rx_dma.is_none() {
+            return Err(Error::InvalidArgument);
+        }
+
         Self::init::<T>(Some(tx.reborrow()), Some(rx.reborrow()), None, None, config)?;
 
         Ok(Self {
             info: T::info(),
-            tx: UartTx::new_inner::<T>(Some(tx_dma)),
-            rx: UartRx::new_inner::<T>(Some(rx_dma)),
+            tx: UartTx::new_inner::<T>(Some(tx_dma.unwrap())),
+            rx: UartRx::new_inner::<T>(Some(rx_dma.unwrap())),
         })
     }
 
@@ -824,6 +836,10 @@ impl<'a> Uart<'a, Async> {
         let tx_dma = dma::Dma::reserve_channel(tx_dma);
         let rx_dma = dma::Dma::reserve_channel(rx_dma);
 
+        if tx_dma.is_none() || rx_dma.is_none() {
+            return Err(Error::InvalidArgument);
+        }
+
         Self::init::<T>(
             Some(tx.reborrow()),
             Some(rx.reborrow()),
@@ -834,8 +850,8 @@ impl<'a> Uart<'a, Async> {
 
         Ok(Self {
             info: T::info(),
-            tx: UartTx::new_inner::<T>(Some(tx_dma)),
-            rx: UartRx::new_inner::<T>(Some(rx_dma)),
+            tx: UartTx::new_inner::<T>(Some(tx_dma.unwrap())),
+            rx: UartRx::new_inner::<T>(Some(rx_dma.unwrap())),
         })
     }
 
